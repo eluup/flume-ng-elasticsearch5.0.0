@@ -18,19 +18,23 @@
  */
 package com.eluup.flume.sink.elasticsearch;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.conf.ComponentConfiguration;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.Date;
-import java.util.Map;
-
 import com.google.common.collect.Maps;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 
 /**
@@ -52,7 +56,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  *       "user": "jordan",
  *       "command": "shutdown -r":
  *     }
- *     "@message": "the original plain-text message"
+ *     "other_field":"other_value"
  *   }
  * </pre>
  * <p>
@@ -71,7 +75,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  * ://github.com/logstash/logstash/wiki/logstash%27s-internal-message-
  * format
  */
-public class ElasticSearchLogStashEventSerializer implements
+public class ElasticSearchSparkEventSerializer implements
         ElasticSearchEventSerializer {
 
     public XContentBuilder getContentBuilder(Event event) throws IOException {
@@ -84,7 +88,22 @@ public class ElasticSearchLogStashEventSerializer implements
     private void appendBody(XContentBuilder builder, Event event)
             throws IOException {
         byte[] body = event.getBody();
-        ContentBuilderUtil.appendField(builder, "@message", body);
+//        ContentBuilderUtil.appendField(builder, "@message", body);
+        Gson gson = new Gson();
+        Type type = new TypeToken<Map<String, Object>>() {}.getType();
+        Map<String, Object> jsonHash = gson.fromJson(new String(body,charset), type);
+        for (Map.Entry<String, Object> entry : jsonHash.entrySet()) {
+            Object val = entry.getValue();
+            if(val instanceof List){
+        	builder.startArray(entry.getKey());
+        	for(Object obj : (List)val){
+        	    builder.value(obj);
+        	}
+        	builder.endArray();
+            }else{
+        	builder.field(entry.getKey(), val);
+            }
+        }
     }
 
     private void appendHeaders(XContentBuilder builder, Event event)

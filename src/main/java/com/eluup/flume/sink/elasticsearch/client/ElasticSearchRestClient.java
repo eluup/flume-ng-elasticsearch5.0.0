@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch.client;
+package com.eluup.flume.sink.elasticsearch.client;
 
-import main.java.com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
-import main.java.com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
+import com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
+import com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import org.apache.flume.Context;
@@ -83,15 +83,12 @@ public class ElasticSearchRestClient implements ElasticSearchClient {
         httpClient = client;
     }
 
-    @Override
     public void configure(Context context) {
     }
 
-    @Override
     public void close() {
     }
 
-    @Override
     public void addEvent(Event event, IndexNameBuilder indexNameBuilder, String indexType, long ttlMs) throws Exception {
         BytesReference content = serializer.getContentBuilder(event).bytes();
         Map<String, Map<String, String>> parameters = new HashMap<String, Map<String, String>>();
@@ -107,12 +104,11 @@ public class ElasticSearchRestClient implements ElasticSearchClient {
         synchronized (bulkBuilder) {
             bulkBuilder.append(gson.toJson(parameters));
             bulkBuilder.append("\n");
-            bulkBuilder.append(content.toBytesArray().toUtf8());
+            bulkBuilder.append(BytesReference.toBytes(content));
             bulkBuilder.append("\n");
         }
     }
 
-    @Override
     public void execute() throws Exception {
         int statusCode = 0, triesCount = 0;
         HttpResponse response = null;

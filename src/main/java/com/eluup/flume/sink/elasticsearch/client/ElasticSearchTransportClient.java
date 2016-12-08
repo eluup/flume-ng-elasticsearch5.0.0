@@ -16,16 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch.client;
+package com.eluup.flume.sink.elasticsearch.client;
 
-import main.java.com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
-import main.java.com.eluup.flume.sink.elasticsearch.ElasticSearchIndexRequestBuilderFactory;
-import main.java.com.eluup.flume.sink.elasticsearch.ElasticSearchSinkConstants;
-import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Arrays;
+
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDeliveryException;
-import main.java.com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -33,14 +32,17 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
+
+import com.eluup.flume.sink.elasticsearch.client.PreBuiltTransportClient;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
+import com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
+import com.eluup.flume.sink.elasticsearch.ElasticSearchIndexRequestBuilderFactory;
+import com.eluup.flume.sink.elasticsearch.ElasticSearchSinkConstants;
+import com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
+import com.google.common.annotations.VisibleForTesting;
 
 public class ElasticSearchTransportClient implements ElasticSearchClient {
 
@@ -141,7 +143,6 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
         }
     }
 
-    @Override
     public void close() {
         if (client != null) {
             client.close();
@@ -149,7 +150,6 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
         client = null;
     }
 
-    @Override
     public void addEvent(Event event, IndexNameBuilder indexNameBuilder,
                          String indexType, long ttlMs) throws Exception {
         if (bulkRequestBuilder == null) {
@@ -172,7 +172,6 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
         bulkRequestBuilder.add(indexRequestBuilder);
     }
 
-    @Override
     public void execute() throws Exception {
         try {
             BulkResponse bulkResponse = bulkRequestBuilder.execute().actionGet();
@@ -192,10 +191,20 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
     private void openClient(String clusterName) {
         logger.info("Using ElasticSearch hostnames: {} ",
                 Arrays.toString(serverAddresses));
-        Settings settings = Settings.settingsBuilder()
-                .put("cluster.name", clusterName).build();
-
-        TransportClient transportClient = TransportClient.builder().settings(settings).build();
+        
+        System.out.println("ElasticSearchTransportClient:"
+        		+ "Using ElasticSearch hostnames: {} "
+        		+ Arrays.toString(serverAddresses));
+        
+        Settings settings = Settings.builder()
+                .put("cluster.name", clusterName)
+                .put("client.transport.sniff", true)
+                .put("client.transport.ignore_cluster_name", true)
+                .put("client.transport.ping_timeout", 10)
+                .put("client.transport.nodes_sampler_interval", 10)
+                .build();
+        PreBuiltTransportClient transportClient = new PreBuiltTransportClient(settings);
+        
         for (InetSocketTransportAddress host : serverAddresses) {
             transportClient.addTransportAddress(host);
         }
@@ -213,14 +222,15 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
      */
     private void openLocalDiscoveryClient() {
         logger.info("Using ElasticSearch AutoDiscovery mode");
-        Node node = NodeBuilder.nodeBuilder().client(true).local(true).node();
-        if (client != null) {
-            client.close();
-        }
-        client = node.client();
+        logger.warn("NodeBuilder has been removed. "
+        		+ "While using Node directly within an application is not officially supported, "
+        		+ "it can still be constructed with the Node(Settings) constructor.");
+        System.out.println("ElasticSearchTransportClient:"
+        		+ "NodeBuilder has been removed. "
+        		+ "While using Node directly within an application is not officially supported, "
+        		+ "it can still be constructed with the Node(Settings) constructor.");
     }
 
-    @Override
     public void configure(Context context) {
         //To change body of implemented methods use File | Settings | File Templates.
     }

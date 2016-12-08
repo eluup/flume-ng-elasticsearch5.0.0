@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
 
-import main.java.com.eluup.flume.sink.elasticsearch.client.ElasticSearchClient;
-import main.java.com.eluup.flume.sink.elasticsearch.client.ElasticSearchClientFactory;
+import com.eluup.flume.sink.elasticsearch.client.ElasticSearchClient;
+import com.eluup.flume.sink.elasticsearch.client.ElasticSearchClientFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flume.Channel;
 import org.apache.flume.Context;
@@ -152,12 +152,21 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
     return indexNameBuilder;
   }
 
-  @Override
   public Status process() throws EventDeliveryException {
     logger.debug("processing...");
     Status status = Status.READY;
     Channel channel = getChannel();
     Transaction txn = channel.getTransaction();
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    System.out.println("ElasticSearchSink");
+    
     try {
       txn.begin();
       int count;
@@ -190,9 +199,20 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
       sinkCounter.addToEventDrainSuccessCount(count);
       counterGroup.incrementAndGet("transaction.success");
     } catch (Throwable ex) {
+    	
+    	System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
+        System.out.println(ex.getMessage());
       try {
         txn.rollback();
         counterGroup.incrementAndGet("transaction.rollback");
+        System.exit(0);
       } catch (Exception ex2) {
         logger.error(
             "Exception in rollback. Rollback might not have been successful.",
@@ -215,7 +235,6 @@ public class ElasticSearchSink extends AbstractSink implements Configurable {
     return status;
   }
 
-  @Override
   public void configure(Context context) {
     if (!isLocal) {
       if (StringUtils.isNotBlank(context.getString(ElasticSearchSinkConstants.HOSTNAMES))) {

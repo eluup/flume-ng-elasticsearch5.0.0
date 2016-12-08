@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
 
 public class ElasticSearchSinkConstants {
 
@@ -104,8 +104,8 @@ public class ElasticSearchSinkConstants {
   public static final String DEFAULT_CLUSTER_NAME = "elasticsearch";
   public static final String DEFAULT_CLIENT_TYPE = "transport";
   public static final String TTL_REGEX = "^(\\d+)(\\D*)";
-  public static final String DEFAULT_SERIALIZER_CLASS = "main.java.com.eluup.flume.sink.elasticsearch.ElasticSearchLogStashEventSerializer";
-  public static final String DEFAULT_INDEX_NAME_BUILDER_CLASS = "main.java.com.eluup.flume.sink.elasticsearch.TimeBasedIndexNameBuilder";
+  public static final String DEFAULT_SERIALIZER_CLASS = "com.eluup.flume.sink.elasticsearch.ElasticSearchLogStashEventSerializer";
+  public static final String DEFAULT_INDEX_NAME_BUILDER_CLASS = "com.eluup.flume.sink.elasticsearch.TimeBasedIndexNameBuilder";
 
   private ElasticSearchSinkConstants() {}
 }

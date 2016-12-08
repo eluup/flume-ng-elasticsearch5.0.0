@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch.client;
+package com.eluup.flume.sink.elasticsearch.client;
 
-import main.java.com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
-import main.java.com.eluup.flume.sink.elasticsearch.ElasticSearchIndexRequestBuilderFactory;
+import com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
+import com.eluup.flume.sink.elasticsearch.ElasticSearchIndexRequestBuilderFactory;
 
 /**
  * Internal ElasticSearch client factory. Responsible for creating instance

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -39,17 +39,14 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 public class ElasticSearchDynamicSerializer implements
         ElasticSearchEventSerializer {
 
-  @Override
   public void configure(Context context) {
     // NO-OP...
   }
 
-  @Override
   public void configure(ComponentConfiguration conf) {
     // NO-OP...
   }
 
-  @Override
   public XContentBuilder getContentBuilder(Event event) throws IOException {
     XContentBuilder builder = jsonBuilder().startObject();
     appendBody(builder, event);

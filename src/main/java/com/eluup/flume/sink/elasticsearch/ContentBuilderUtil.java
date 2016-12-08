@@ -16,17 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-
+package com.eluup.flume.sink.elasticsearch;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
+
+import com.google.gson.JsonParseException;
 
 /**
  * Utility methods for using ElasticSearch {@link XContentBuilder}

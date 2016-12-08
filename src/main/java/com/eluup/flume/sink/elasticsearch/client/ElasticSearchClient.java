@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch.client;
+package com.eluup.flume.sink.elasticsearch.client;
 
-import main.java.com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
+import com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
 import org.apache.flume.Event;
 import org.apache.flume.conf.Configurable;
 

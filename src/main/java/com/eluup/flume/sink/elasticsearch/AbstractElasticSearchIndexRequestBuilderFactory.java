@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
 
 import java.io.IOException;
 
@@ -57,13 +57,11 @@ public abstract class AbstractElasticSearchIndexRequestBuilderFactory
   /**
    * @see Configurable
    */
-  @Override
   public abstract void configure(Context arg0);
 
   /**
    * @see ConfigurableComponent
    */
-  @Override
   public abstract void configure(ComponentConfiguration arg0);
 
   /**
@@ -72,7 +70,6 @@ public abstract class AbstractElasticSearchIndexRequestBuilderFactory
    * {@link #getIndexName(String, long)} and
    * {@link #prepareIndexRequest(IndexRequestBuilder, String, String, Event)}
    */
-  @Override
   public IndexRequestBuilder createIndexRequest(Client client,
         String indexPrefix, String indexType, Event event) throws IOException {
     IndexRequestBuilder request = prepareIndex(client);

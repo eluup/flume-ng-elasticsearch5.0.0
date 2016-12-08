@@ -16,7 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package main.java.com.eluup.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
+
+import java.io.IOException;
+import java.util.TimeZone;
 
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.flume.Event;
@@ -24,9 +27,6 @@ import org.apache.flume.conf.Configurable;
 import org.apache.flume.conf.ConfigurableComponent;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Client;
-
-import java.io.IOException;
-import java.util.TimeZone;
 
 /**
  * Interface for creating ElasticSearch {@link IndexRequestBuilder} instances
