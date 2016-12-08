@@ -1,4 +1,4 @@
-package com.eluup.flume.sink.elasticsearch.client;
+package org.apache.flume.sink.elasticsearch.client;
 
 import java.util.Collection;
 import java.util.Iterator;
