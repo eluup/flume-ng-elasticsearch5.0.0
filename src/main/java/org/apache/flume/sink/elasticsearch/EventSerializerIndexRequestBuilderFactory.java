@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
 
 import java.io.IOException;
 
@@ -39,7 +39,7 @@ public class EventSerializerIndexRequestBuilderFactory
 
   public EventSerializerIndexRequestBuilderFactory(
       ElasticSearchEventSerializer serializer) {
-    this(serializer, ElasticSearchIndexRequestBuilderFactory.df);
+    this(serializer, df);
   }
 
   protected EventSerializerIndexRequestBuilderFactory(

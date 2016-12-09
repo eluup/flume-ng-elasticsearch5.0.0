@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang.StringUtils;
@@ -57,7 +57,6 @@ public class TimeBasedIndexNameBuilder implements
    *          Event for which the name of index has to be prepared
    * @return index name of the form 'indexPrefix-formattedTimestamp'
    */
-  @Override
   public String getIndexName(Event event) {
     TimestampedEvent timestampedEvent = new TimestampedEvent(event);
     long timestamp = timestampedEvent.getTimestamp();
@@ -66,12 +65,10 @@ public class TimeBasedIndexNameBuilder implements
       .append(fastDateFormat.format(timestamp)).toString();
   }
   
-  @Override
   public String getIndexPrefix(Event event) {
     return BucketPath.escapeString(indexPrefix, event.getHeaders());
   }
 
-  @Override
   public void configure(Context context) {
     String dateFormatString = context.getString(DATE_FORMAT);
     String timeZoneString = context.getString(TIME_ZONE);
@@ -86,7 +83,6 @@ public class TimeBasedIndexNameBuilder implements
     indexPrefix = context.getString(ElasticSearchSinkConstants.INDEX_NAME);
   }
 
-  @Override
   public void configure(ComponentConfiguration conf) {
   }
 }

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.flume.sink.elasticsearch;
+package com.eluup.flume.sink.elasticsearch;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
