@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.eluup.flume.sink.elasticsearch;
+package org.apache.flume.sink.elasticsearch;
 
 import org.apache.flume.Context;
 import org.apache.flume.Event;
@@ -25,18 +25,22 @@ public class SimpleIndexNameBuilder implements IndexNameBuilder {
 
   private String indexName;
 
+  @Override
   public String getIndexName(Event event) {
     return BucketPath.escapeString(indexName, event.getHeaders());
   }
 
+  @Override
   public String getIndexPrefix(Event event) {
     return BucketPath.escapeString(indexName, event.getHeaders());
   }
 
+  @Override
   public void configure(Context context) {
     indexName = context.getString(ElasticSearchSinkConstants.INDEX_NAME);
   }
 
+  @Override
   public void configure(ComponentConfiguration conf) {
   }
 }

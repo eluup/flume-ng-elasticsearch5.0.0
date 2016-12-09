@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.eluup.flume.sink.elasticsearch.client;
+package org.apache.flume.sink.elasticsearch.client;
 
 /**
  * Exception class

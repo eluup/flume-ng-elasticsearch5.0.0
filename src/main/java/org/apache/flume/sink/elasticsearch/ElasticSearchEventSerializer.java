@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.eluup.flume.sink.elasticsearch;
+package org.apache.flume.sink.elasticsearch;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
