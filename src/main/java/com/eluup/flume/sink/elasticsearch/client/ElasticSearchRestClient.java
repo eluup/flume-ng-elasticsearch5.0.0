@@ -18,10 +18,10 @@
  */
 package com.eluup.flume.sink.elasticsearch.client;
 
-import com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
-import com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.Gson;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDeliveryException;
@@ -36,9 +36,10 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import com.eluup.flume.sink.elasticsearch.ElasticSearchEventSerializer;
+import com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
 
 /**
  * Rest ElasticSearch client which is responsible for sending bulks of events to
@@ -47,96 +48,98 @@ import java.util.Map;
  */
 public class ElasticSearchRestClient implements ElasticSearchClient {
 
-    private static final String INDEX_OPERATION_NAME = "index";
-    private static final String INDEX_PARAM = "_index";
-    private static final String TYPE_PARAM = "_type";
-    private static final String TTL_PARAM = "_ttl";
-    private static final String BULK_ENDPOINT = "_bulk";
+	private static final String INDEX_OPERATION_NAME = "index";
+	private static final String INDEX_PARAM = "_index";
+	private static final String TYPE_PARAM = "_type";
+	private static final String TTL_PARAM = "_ttl";
+	private static final String BULK_ENDPOINT = "_bulk";
 
-    private static final Logger logger = LoggerFactory.getLogger(ElasticSearchRestClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(ElasticSearchRestClient.class);
 
-    private final ElasticSearchEventSerializer serializer;
-    private final RoundRobinList<String> serversList;
+	private final ElasticSearchEventSerializer serializer;
+	private final RoundRobinList<String> serversList;
 
-    private StringBuilder bulkBuilder;
-    private HttpClient httpClient;
+	private StringBuilder bulkBuilder;
+	private HttpClient httpClient;
 
-    public ElasticSearchRestClient(String[] hostNames,
-                                   ElasticSearchEventSerializer serializer) {
+	public ElasticSearchRestClient(String[] hostNames, ElasticSearchEventSerializer serializer) {
 
-        for (int i = 0; i < hostNames.length; ++i) {
-            if (!hostNames[i].contains("http://") && !hostNames[i].contains("https://")) {
-                hostNames[i] = "http://" + hostNames[i];
-            }
-        }
-        this.serializer = serializer;
+		for (int i = 0; i < hostNames.length; ++i) {
+			if (!hostNames[i].contains("http://") && !hostNames[i].contains("https://")) {
+				hostNames[i] = "http://" + hostNames[i];
+			}
+		}
+		this.serializer = serializer;
 
-        serversList = new RoundRobinList<String>(Arrays.asList(hostNames));
-        httpClient = new DefaultHttpClient();
-        bulkBuilder = new StringBuilder();
-    }
+		serversList = new RoundRobinList<String>(Arrays.asList(hostNames));
+		httpClient = new DefaultHttpClient();
+		bulkBuilder = new StringBuilder();
+	}
 
-    @VisibleForTesting
-    public ElasticSearchRestClient(String[] hostNames,
-                                   ElasticSearchEventSerializer serializer, HttpClient client) {
-        this(hostNames, serializer);
-        httpClient = client;
-    }
+	@VisibleForTesting
+	public ElasticSearchRestClient(String[] hostNames, ElasticSearchEventSerializer serializer,
+	        HttpClient client) {
+		this(hostNames, serializer);
+		httpClient = client;
+	}
 
-    public void configure(Context context) {
-    }
+	public void configure(Context context) {
+	}
 
-    public void close() {
-    }
+	public void close() {
+	}
 
-    public void addEvent(Event event, IndexNameBuilder indexNameBuilder, String indexType, long ttlMs) throws Exception {
-        BytesReference content = serializer.getContentBuilder(event).bytes();
-        Map<String, Map<String, String>> parameters = new HashMap<String, Map<String, String>>();
-        Map<String, String> indexParameters = new HashMap<String, String>();
-        indexParameters.put(INDEX_PARAM, indexNameBuilder.getIndexName(event));
-        indexParameters.put(TYPE_PARAM, indexType);
-        if (ttlMs > 0) {
-            indexParameters.put(TTL_PARAM, Long.toString(ttlMs));
-        }
-        parameters.put(INDEX_OPERATION_NAME, indexParameters);
+	public void addEvent(Event event, IndexNameBuilder indexNameBuilder, String indexType,
+	        long ttlMs) throws Exception {
+		BytesReference content = serializer.getContentBuilder(event).bytes();
+		Map<String, Map<String, String>> parameters = new HashMap<String, Map<String, String>>();
+		Map<String, String> indexParameters = new HashMap<String, String>();
+		indexParameters.put(INDEX_PARAM, indexNameBuilder.getIndexName(event));
+		indexParameters.put(TYPE_PARAM, indexType);
+		if (ttlMs > 0) {
+			indexParameters.put(TTL_PARAM, Long.toString(ttlMs));
+		}
+		parameters.put(INDEX_OPERATION_NAME, indexParameters);
 
-        Gson gson = new Gson();
-        synchronized (bulkBuilder) {
-            bulkBuilder.append(gson.toJson(parameters));
-            bulkBuilder.append("\n");
-            bulkBuilder.append(BytesReference.toBytes(content));
-            bulkBuilder.append("\n");
-        }
-    }
+		Gson gson = new Gson();
+		synchronized (bulkBuilder) {
+			bulkBuilder.append(gson.toJson(parameters));
+			bulkBuilder.append("\n");
+			bulkBuilder.append(BytesReference.toBytes(content));
+			bulkBuilder.append("\n");
+		}
+	}
 
-    public void execute() throws Exception {
-        int statusCode = 0, triesCount = 0;
-        HttpResponse response = null;
-        String entity;
-        synchronized (bulkBuilder) {
-            entity = bulkBuilder.toString();
-            bulkBuilder = new StringBuilder();
-        }
+	public void execute() throws Exception {
+		int statusCode = 0, triesCount = 0;
+		HttpResponse response = null;
+		String entity;
+		synchronized (bulkBuilder) {
+			entity = bulkBuilder.toString();
+			bulkBuilder = new StringBuilder();
+		}
 
-        while (statusCode != HttpStatus.SC_OK && triesCount < serversList.size()) {
-            triesCount++;
-            String host = serversList.get();
-            String url = host + "/" + BULK_ENDPOINT;
-            HttpPost httpRequest = new HttpPost(url);
-            httpRequest.setEntity(new StringEntity(entity));
-            response = httpClient.execute(httpRequest);
-            statusCode = response.getStatusLine().getStatusCode();
-            logger.info("Status code from elasticsearch: " + statusCode);
-            if (response.getEntity() != null)
-                logger.debug("Status message from elasticsearch: " + EntityUtils.toString(response.getEntity(), "UTF-8"));
-        }
+		while (statusCode != HttpStatus.SC_OK && triesCount < serversList.size()) {
+			triesCount++;
+			String host = serversList.get();
+			String url = host + "/" + BULK_ENDPOINT;
+			HttpPost httpRequest = new HttpPost(url);
+			httpRequest.setEntity(new StringEntity(entity));
+			response = httpClient.execute(httpRequest);
+			statusCode = response.getStatusLine().getStatusCode();
+			logger.info("Status code from elasticsearch: " + statusCode);
+			if (response.getEntity() != null)
+				logger.debug("Status message from elasticsearch: "
+				        + EntityUtils.toString(response.getEntity(), "UTF-8"));
+		}
 
-        if (statusCode != HttpStatus.SC_OK) {
-            if (response != null && response.getEntity() != null) {
-                throw new EventDeliveryException(EntityUtils.toString(response.getEntity(), "UTF-8"));
-            } else {
-                throw new EventDeliveryException("Elasticsearch status code was: " + statusCode);
-            }
-        }
-    }
+		if (statusCode != HttpStatus.SC_OK) {
+			if (response != null && response.getEntity() != null) {
+				throw new EventDeliveryException(
+				        EntityUtils.toString(response.getEntity(), "UTF-8"));
+			} else {
+				throw new EventDeliveryException("Elasticsearch status code was: " + statusCode);
+			}
+		}
+	}
 }

@@ -36,13 +36,13 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-
 /**
  * Serialize flume events into the same format LogStash uses</p>
  * <p>
  * This can be used to send events to ElasticSearch and use clients such as
  * Kabana which expect Logstash formated indexes
  * <p>
+ * 
  * <pre>
  * {
  *    "@timestamp": "2010-12-21T21:48:33.309258Z",
@@ -61,8 +61,10 @@ import com.google.gson.reflect.TypeToken;
  * </pre>
  * <p>
  * If the following headers are present, they will map to the above logstash
- * output as long as the logstash fields are not already present.</p>
+ * output as long as the logstash fields are not already present.
+ * </p>
  * <p>
+ * 
  * <pre>
  *  timestamp: long -> @timestamp:Date
  *  host: String -> @source_host: String
@@ -72,91 +74,84 @@ import com.google.gson.reflect.TypeToken;
  * </pre>
  *
  * @see https
- * ://github.com/logstash/logstash/wiki/logstash%27s-internal-message-
- * format
+ *      ://github.com/logstash/logstash/wiki/logstash%27s-internal-message-
+ *      format
  */
-public class ElasticSearchSparkEventSerializer implements
-        ElasticSearchEventSerializer {
+public class ElasticSearchSparkEventSerializer implements ElasticSearchEventSerializer {
 
-    public XContentBuilder getContentBuilder(Event event) throws IOException {
-        XContentBuilder builder = jsonBuilder().startObject();
-        appendBody(builder, event);
-        appendHeaders(builder, event);
-        return builder;
-    }
+	public XContentBuilder getContentBuilder(Event event) throws IOException {
+		XContentBuilder builder = jsonBuilder().startObject();
+		appendBody(builder, event);
+		appendHeaders(builder, event);
+		builder.endObject();
+		return builder;
+	}
 
-    private void appendBody(XContentBuilder builder, Event event)
-            throws IOException {
-        byte[] body = event.getBody();
-//        ContentBuilderUtil.appendField(builder, "@message", body);
-        Gson gson = new Gson();
-        Type type = new TypeToken<Map<String, Object>>() {}.getType();
-        Map<String, Object> jsonHash = gson.fromJson(new String(body,charset), type);
-        for (Map.Entry<String, Object> entry : jsonHash.entrySet()) {
-            Object val = entry.getValue();
-            if(val instanceof List){
-        	builder.startArray(entry.getKey());
-        	for(Object obj : (List)val){
-        	    builder.value(obj);
-        	}
-        	builder.endArray();
-            }else{
-        	builder.field(entry.getKey(), val);
-            }
-        }
-    }
+	private void appendBody(XContentBuilder builder, Event event) throws IOException {
+		byte[] body = event.getBody();
 
-    private void appendHeaders(XContentBuilder builder, Event event)
-            throws IOException {
-        Map<String, String> headers = Maps.newHashMap(event.getHeaders());
+		// ContentBuilderUtil.appendField(builder, "@message", body);
+		Gson gson = new Gson();
+		Type type = new TypeToken<Map<String, Object>>() {
+		}.getType();
 
-        String timestamp = headers.get("timestamp");
-        if (!StringUtils.isBlank(timestamp)
-                && StringUtils.isBlank(headers.get("@timestamp"))) {
-            long timestampMs = Long.parseLong(timestamp);
-            builder.field("@timestamp", new Date(timestampMs));
-        }
+		Map<String, Object> jsonHash = gson.fromJson(new String(body, charset), type);
+		for (Map.Entry<String, Object> entry : jsonHash.entrySet()) {
+			Object val = entry.getValue();
+			if (val instanceof List) {
+				builder.startArray(entry.getKey());
+				for (Object obj : (List) val) {
+					builder.value(obj);
+				}
+				builder.endArray();
+			} else {
+				builder.field(entry.getKey(), val);
+			}
+		}
 
-        String source = headers.get("source");
-        if (!StringUtils.isBlank(source)
-                && StringUtils.isBlank(headers.get("@source"))) {
-            ContentBuilderUtil.appendField(builder, "@source",
-                    source.getBytes(charset));
-        }
+	}
 
-        String type = headers.get("type");
-        if (!StringUtils.isBlank(type)
-                && StringUtils.isBlank(headers.get("@type"))) {
-            ContentBuilderUtil.appendField(builder, "@type", type.getBytes(charset));
-        }
+	private void appendHeaders(XContentBuilder builder, Event event) throws IOException {
+		Map<String, String> headers = Maps.newHashMap(event.getHeaders());
+		String timestamp = headers.get("timestamp");
+		if (!StringUtils.isBlank(timestamp) && StringUtils.isBlank(headers.get("@timestamp"))) {
+			long timestampMs = Long.parseLong(timestamp);
+			builder.field("@timestamp", new Date(timestampMs));
+		}
 
-        String host = headers.get("host");
-        if (!StringUtils.isBlank(host)
-                && StringUtils.isBlank(headers.get("@source_host"))) {
-            ContentBuilderUtil.appendField(builder, "@source_host",
-                    host.getBytes(charset));
-        }
+		String source = headers.get("source");
+		if (!StringUtils.isBlank(source) && StringUtils.isBlank(headers.get("@source"))) {
+			ContentBuilderUtil.appendField(builder, "@source", source.getBytes(charset));
+		}
 
-        String srcPath = headers.get("src_path");
-        if (!StringUtils.isBlank(srcPath)
-                && StringUtils.isBlank(headers.get("@source_path"))) {
-            ContentBuilderUtil.appendField(builder, "@source_path",
-                    srcPath.getBytes(charset));
-        }
+		String type = headers.get("type");
+		if (!StringUtils.isBlank(type) && StringUtils.isBlank(headers.get("@type"))) {
+			ContentBuilderUtil.appendField(builder, "@type", type.getBytes(charset));
+		}
 
-        builder.startObject("@fields");
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            byte[] val = entry.getValue().getBytes(charset);
-            ContentBuilderUtil.appendField(builder, entry.getKey(), val);
-        }
-        builder.endObject();
-    }
+		String host = headers.get("host");
+		if (!StringUtils.isBlank(host) && StringUtils.isBlank(headers.get("@source_host"))) {
+			ContentBuilderUtil.appendField(builder, "@source_host", host.getBytes(charset));
+		}
 
-    public void configure(Context context) {
-        // NO-OP...
-    }
+		String srcPath = headers.get("src_path");
+		if (!StringUtils.isBlank(srcPath) && StringUtils.isBlank(headers.get("@source_path"))) {
+			ContentBuilderUtil.appendField(builder, "@source_path", srcPath.getBytes(charset));
+		}
 
-    public void configure(ComponentConfiguration conf) {
-        // NO-OP...
-    }
+		builder.startObject("@fields");
+		for (Map.Entry<String, String> entry : headers.entrySet()) {
+			byte[] val = entry.getValue().getBytes(charset);
+			ContentBuilderUtil.appendField(builder, entry.getKey(), val);
+		}
+		builder.endObject();
+	}
+
+	public void configure(Context context) {
+		// NO-OP...
+	}
+
+	public void configure(ComponentConfiguration conf) {
+		// NO-OP...
+	}
 }

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.TimeZone;
 
 import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.conf.ConfigurableComponent;
@@ -34,27 +35,27 @@ import org.elasticsearch.client.Client;
  * required should be taken through this.
  */
 public interface ElasticSearchIndexRequestBuilderFactory extends Configurable,
-    ConfigurableComponent {
+        ConfigurableComponent {
 
-  static final FastDateFormat df = FastDateFormat.getInstance("yyyy-MM-dd",
-      TimeZone.getTimeZone("Etc/UTC"));
+	static final FastDateFormat df = FastDateFormat.getInstance("yyyy-MM-dd",
+	        TimeZone.getTimeZone("Etc/UTC"));
 
-  /**
-   * @return prepared ElasticSearch {@link IndexRequestBuilder} instance
-   * @param client
-   *          ElasticSearch {@link Client} to prepare index from
-   * @param indexPrefix
-   *          Prefix of index name to use -- as configured on the sink
-   * @param indexType
-   *          Index type to use -- as configured on the sink
-   * @param event
-   *          Flume event to serialize and add to index request
-   * @throws IOException
-   *           If an error occurs e.g. during serialization
-   */
-  IndexRequestBuilder createIndexRequest(Client client, String indexPrefix,
-      String indexType, Event event) throws IOException;
+	/**
+	 * @return prepared ElasticSearch {@link IndexRequestBuilder} instance
+	 * @param client
+	 *            ElasticSearch {@link Client} to prepare index from
+	 * @param indexPrefix
+	 *            Prefix of index name to use -- as configured on the sink
+	 * @param indexType
+	 *            Index type to use -- as configured on the sink
+	 * @param event
+	 *            Flume event to serialize and add to index request
+	 * @throws IOException
+	 *             If an error occurs e.g. during serialization
+	 */
+	IndexRequestBuilder createIndexRequest(Client client, String indexPrefix, String indexType,
+	        Event event) throws IOException;
 
-
+	void configure(Context arg0);
 
 }

@@ -1,27 +1,19 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * 添加 ES x-pack 客户端。
+ * 账号配置方式：在flum-ng 配置中 添加
+ * access_new.sinks.s1.client = x-pack-transport   #指定客户端类型
+ * access_new.sinks.s1.client.securityUser = elastic:changeme  #设置连接账号密码
  */
 package com.eluup.flume.sink.elasticsearch.client;
+
+import static com.eluup.flume.sink.elasticsearch.ElasticSearchSinkConstants.DEFAULT_SECURITY_USER;
+import static com.eluup.flume.sink.elasticsearch.ElasticSearchSinkConstants.SECURITY_USER;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.EventDeliveryException;
@@ -32,6 +24,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.xpack.client.PreBuiltXPackTransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +34,9 @@ import com.eluup.flume.sink.elasticsearch.ElasticSearchSinkConstants;
 import com.eluup.flume.sink.elasticsearch.IndexNameBuilder;
 import com.google.common.annotations.VisibleForTesting;
 
-public class ElasticSearchTransportClient implements ElasticSearchClient {
+public class ElasticSearchTransportXPackClient implements ElasticSearchClient {
 
-	public static final Logger logger = LoggerFactory.getLogger(ElasticSearchTransportClient.class);
+	public static final Logger logger = LoggerFactory.getLogger(ElasticSearchTransportXPackClient.class);
 
 	private InetSocketTransportAddress[] serverAddresses;
 	private ElasticSearchEventSerializer serializer;
@@ -51,6 +44,10 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
 	private BulkRequestBuilder bulkRequestBuilder;
 
 	private Client client;
+	private String clustername;
+	
+	
+	private String securityUser = DEFAULT_SECURITY_USER;
 
 	/**
 	 * Transport client for external cluster
@@ -59,14 +56,14 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
 	 * @param clusterName
 	 * @param serializer
 	 */
-	public ElasticSearchTransportClient(String[] hostNames, String clusterName,
+	public ElasticSearchTransportXPackClient(String[] hostNames, String clusterName,
 	        ElasticSearchEventSerializer serializer) {
 		configureHostnames(hostNames);
 		this.serializer = serializer;
 		openClient(clusterName);
 	}
 
-	public ElasticSearchTransportClient(String[] hostNames, String clusterName,
+	public ElasticSearchTransportXPackClient(String[] hostNames, String clusterName,
 	        ElasticSearchIndexRequestBuilderFactory indexBuilder) {
 		configureHostnames(hostNames);
 		this.indexRequestBuilderFactory = indexBuilder;
@@ -78,7 +75,7 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
 	 *
 	 * @param indexBuilderFactory
 	 */
-	public ElasticSearchTransportClient(ElasticSearchIndexRequestBuilderFactory indexBuilderFactory) {
+	public ElasticSearchTransportXPackClient(ElasticSearchIndexRequestBuilderFactory indexBuilderFactory) {
 		this.indexRequestBuilderFactory = indexBuilderFactory;
 		// openLocalDiscoveryClient();
 	}
@@ -88,7 +85,7 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
 	 *
 	 * @param serializer
 	 */
-	public ElasticSearchTransportClient(ElasticSearchEventSerializer serializer) {
+	public ElasticSearchTransportXPackClient(ElasticSearchEventSerializer serializer) {
 		this.serializer = serializer;
 		// openLocalDiscoveryClient();
 	}
@@ -101,7 +98,7 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
 	 * @param serializer
 	 *            Event Serializer
 	 */
-	public ElasticSearchTransportClient(Client client, ElasticSearchEventSerializer serializer) {
+	public ElasticSearchTransportXPackClient(Client client, ElasticSearchEventSerializer serializer) {
 		this.client = client;
 		this.serializer = serializer;
 	}
@@ -114,7 +111,7 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
 	 * @param requestBuilderFactory
 	 *            Event Serializer
 	 */
-	public ElasticSearchTransportClient(Client client,
+	public ElasticSearchTransportXPackClient(Client client,
 	        ElasticSearchIndexRequestBuilderFactory requestBuilderFactory) throws IOException {
 		this.client = client;
 		requestBuilderFactory.createIndexRequest(client, null, null, null);
@@ -195,41 +192,30 @@ public class ElasticSearchTransportClient implements ElasticSearchClient {
 	 */
 	private void openClient(String clusterName) {
 		logger.info("Using ElasticSearch hostnames: {} ", Arrays.toString(serverAddresses));
-
-		Settings settings = Settings.builder().put("cluster.name", clusterName).build();
-
-		if (client != null) {
-			client.close();
-		}
-
-		PreBuiltTransportClient transportClient = new PreBuiltTransportClient(settings);
-
-		for (InetSocketTransportAddress host : serverAddresses) {
-			transportClient.addTransportAddress(host);
-		}
-		client = transportClient;
+		clustername = clusterName;
+		// x-pack 客户端创建，需要参数，放在 configure() 中构建
 	}
 
-	/*
-	 * FOR TESTING ONLY...
-	 * 
-	 * Opens a local discovery node for talking to an elasticsearch server
-	 * running in the same JVM
-	 */
-	// private void openLocalDiscoveryClient() {
-	// logger.info("Using ElasticSearch AutoDiscovery mode");
-	// logger.warn("NodeBuilder has been removed. "
-	// +
-	// "While using Node directly within an application is not officially supported, "
-	// + "it can still be constructed with the Node(Settings) constructor.");
-	// // + "NodeBuilder has been removed. "
-	// +
-	// "While using Node directly within an application is not officially supported, "
-	// + "it can still be constructed with the Node(Settings) constructor.");
-	// }
 
 	public void configure(Context context) {
 		// To change body of implemented methods use File | Settings | File
 		// Templates.
+		securityUser = context.getString(SECURITY_USER);
+		logger.info("Using ElasticSearch xpack security user: {} ", securityUser);
+		Settings settings = Settings.builder()
+				.put("cluster.name", clustername)
+				.put("xpack.security.user", securityUser) 
+                .put("client.transport.sniff", true)
+				.build();
+
+		if (client != null) {
+			client.close();
+		}
+		PreBuiltXPackTransportClient transportClient = new PreBuiltXPackTransportClient(settings);
+		for (InetSocketTransportAddress host : serverAddresses) {
+			transportClient.addTransportAddress(host);
+		}
+		client = transportClient;
+		
 	}
 }

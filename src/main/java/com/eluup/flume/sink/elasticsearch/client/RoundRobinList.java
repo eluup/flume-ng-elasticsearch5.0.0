@@ -21,24 +21,24 @@ import java.util.Iterator;
 
 public class RoundRobinList<T> {
 
-  private Iterator<T> iterator;
-  private final Collection<T> elements;
+	private Iterator<T> iterator;
+	private final Collection<T> elements;
 
-  public RoundRobinList(Collection<T> elements) {
-    this.elements = elements;
-    iterator = this.elements.iterator();
-  }
+	public RoundRobinList(Collection<T> elements) {
+		this.elements = elements;
+		iterator = this.elements.iterator();
+	}
 
-  synchronized public T get() {
-    if (iterator.hasNext()) {
-      return iterator.next();
-    } else {
-      iterator = elements.iterator();
-      return iterator.next();
-    }
-  }
+	synchronized public T get() {
+		if (iterator.hasNext()) {
+			return iterator.next();
+		} else {
+			iterator = elements.iterator();
+			return iterator.next();
+		}
+	}
 
-  public int size() {
-    return elements.size();
-  }
+	public int size() {
+		return elements.size();
+	}
 }
