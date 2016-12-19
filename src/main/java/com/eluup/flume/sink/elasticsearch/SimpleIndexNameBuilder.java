@@ -23,20 +23,20 @@ import org.apache.flume.formatter.output.BucketPath;
 
 public class SimpleIndexNameBuilder implements IndexNameBuilder {
 
-  private String indexName;
+	private String indexName;
 
-  public String getIndexName(Event event) {
-    return BucketPath.escapeString(indexName, event.getHeaders());
-  }
+	public String getIndexName(Event event) {
+		return BucketPath.escapeString(indexName, event.getHeaders());
+	}
 
-  public String getIndexPrefix(Event event) {
-    return BucketPath.escapeString(indexName, event.getHeaders());
-  }
+	public String getIndexPrefix(Event event) {
+		return BucketPath.escapeString(indexName, event.getHeaders());
+	}
 
-  public void configure(Context context) {
-    indexName = context.getString(ElasticSearchSinkConstants.INDEX_NAME);
-  }
+	public void configure(Context context) {
+		indexName = context.getString(ElasticSearchSinkConstants.INDEX_NAME);
+	}
 
-  public void configure(ComponentConfiguration conf) {
-  }
+	public void configure(ComponentConfiguration conf) {
+	}
 }
